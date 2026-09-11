@@ -1,0 +1,6 @@
+{
+  "name": "CMPE 272 GitHub Service",
+  "build": { "dockerfile": "../Dockerfile", "context": ".." },
+  "forwardPorts": [8000],
+  "postCreateCommand": "python -m pip install -e '.[dev]'"
+}
