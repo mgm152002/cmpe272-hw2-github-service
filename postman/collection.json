@@ -1,0 +1,60 @@
+{
+  "info": {
+    "name": "CMPE 272 GitHub Issues Gateway",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8000"},
+    {"key": "issueNumber", "value": "1"},
+    {"key": "deliveryId", "value": "replace-delivery-id"},
+    {"key": "webhookSignature", "value": "sha256=replace-with-signature"}
+  ],
+  "item": [
+    {"name": "Health", "request": {"method": "GET", "url": "{{baseUrl}}/healthz"}},
+    {
+      "name": "Create Issue",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"title\":\"Example issue\",\"body\":\"Created through the gateway\",\"labels\":[]}"},
+        "url": "{{baseUrl}}/issues"
+      }
+    },
+    {"name": "List Issues", "request": {"method": "GET", "url": "{{baseUrl}}/issues?state=all&page=1&per_page=30"}},
+    {"name": "Get Issue", "request": {"method": "GET", "url": "{{baseUrl}}/issues/{{issueNumber}}"}},
+    {
+      "name": "Update or Close Issue",
+      "request": {
+        "method": "PATCH",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"title\":\"Updated title\",\"state\":\"closed\"}"},
+        "url": "{{baseUrl}}/issues/{{issueNumber}}"
+      }
+    },
+    {
+      "name": "Create Comment",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"body\":\"Example comment\"}"},
+        "url": "{{baseUrl}}/issues/{{issueNumber}}/comments"
+      }
+    },
+    {"name": "List Comments", "request": {"method": "GET", "url": "{{baseUrl}}/issues/{{issueNumber}}/comments?page=1&per_page=30"}},
+    {
+      "name": "Webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "X-Hub-Signature-256", "value": "{{webhookSignature}}"},
+          {"key": "X-GitHub-Event", "value": "issues"},
+          {"key": "X-GitHub-Delivery", "value": "{{deliveryId}}"}
+        ],
+        "body": {"mode": "raw", "raw": "{\"action\":\"opened\",\"issue\":{\"number\":1}}"},
+        "url": "{{baseUrl}}/webhook"
+      }
+    },
+    {"name": "List Events", "request": {"method": "GET", "url": "{{baseUrl}}/events?limit=20"}}
+  ]
+}
