@@ -1,0 +1,443 @@
+openapi: 3.1.0
+info:
+  title: CMPE 272 - GitHub Issues Gateway
+  version: 1.0.0
+  description: REST gateway for one configured GitHub repository.
+servers:
+  - url: http://localhost:{port}
+    variables:
+      port:
+        default: "8000"
+security:
+  - bearerAuth: []
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [Operations]
+      security: []
+      responses:
+        "200":
+          description: Service is healthy.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: {type: string}
+              example: {status: ok}
+  /issues:
+    post:
+      operationId: createIssue
+      tags: [Issues]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CreateIssue"}
+            example: {title: Example issue, body: Created through the gateway, labels: [bug]}
+      responses:
+        "201":
+          description: Issue created.
+          headers:
+            Location: {$ref: "#/components/headers/Location"}
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Issue"}
+              examples:
+                issue: {$ref: "#/components/examples/Issue"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "429": {$ref: "#/components/responses/RateLimited"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+    get:
+      operationId: listIssues
+      tags: [Issues]
+      parameters:
+        - name: state
+          in: query
+          schema: {type: string, enum: [open, closed, all], default: open}
+        - name: labels
+          in: query
+          schema: {type: string}
+        - {$ref: "#/components/parameters/Page"}
+        - {$ref: "#/components/parameters/PerPage"}
+      responses:
+        "200":
+          description: Issues returned.
+          headers:
+            Link: {$ref: "#/components/headers/Link"}
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/Issue"}
+              examples:
+                issues: {$ref: "#/components/examples/IssueList"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "429": {$ref: "#/components/responses/RateLimited"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+  /issues/{number}:
+    parameters:
+      - {$ref: "#/components/parameters/IssueNumber"}
+    get:
+      operationId: getIssue
+      tags: [Issues]
+      responses:
+        "200":
+          description: Issue returned.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Issue"}
+              examples:
+                issue: {$ref: "#/components/examples/Issue"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "429": {$ref: "#/components/responses/RateLimited"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+    patch:
+      operationId: updateIssue
+      tags: [Issues]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/UpdateIssue"}
+            example: {title: Updated title, body: Updated body, state: closed}
+      responses:
+        "200":
+          description: Issue updated.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Issue"}
+              examples:
+                issue: {$ref: "#/components/examples/Issue"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "429": {$ref: "#/components/responses/RateLimited"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+  /issues/{number}/comments:
+    parameters:
+      - {$ref: "#/components/parameters/IssueNumber"}
+    post:
+      operationId: createComment
+      tags: [Issues]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/CreateComment"}
+            example: {body: Example comment}
+      responses:
+        "201":
+          description: Comment created.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Comment"}
+              examples:
+                comment: {$ref: "#/components/examples/Comment"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "429": {$ref: "#/components/responses/RateLimited"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+    get:
+      operationId: listComments
+      tags: [Issues]
+      parameters:
+        - {$ref: "#/components/parameters/Page"}
+        - {$ref: "#/components/parameters/PerPage"}
+      responses:
+        "200":
+          description: Comments returned.
+          headers:
+            Link: {$ref: "#/components/headers/Link"}
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/Comment"}
+              examples:
+                comments: {$ref: "#/components/examples/CommentList"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "429": {$ref: "#/components/responses/RateLimited"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+  /webhook:
+    post:
+      operationId: receiveWebhook
+      tags: [Webhooks]
+      security: []
+      parameters:
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          schema: {type: string, pattern: "^sha256="}
+        - name: X-GitHub-Event
+          in: header
+          required: true
+          schema: {type: string, enum: [issues, issue_comment, ping]}
+        - name: X-GitHub-Delivery
+          in: header
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, additionalProperties: true}
+            example: {action: opened, issue: {number: 42}}
+      responses:
+        "204":
+          description: Delivery accepted or previously processed.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+  /events:
+    get:
+      operationId: listEvents
+      tags: [Webhooks]
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      responses:
+        "200":
+          description: Recent webhook events returned newest first.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/Event"}
+              example:
+                - id: delivery-123
+                  event: issues
+                  action: opened
+                  issue_number: 42
+                  timestamp: "2026-09-13T12:00:00Z"
+        "400": {$ref: "#/components/responses/BadRequest"}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: GitHub credential configured by the server environment.
+  parameters:
+    IssueNumber:
+      name: number
+      in: path
+      required: true
+      schema: {type: integer, minimum: 1}
+    Page:
+      name: page
+      in: query
+      schema: {type: integer, minimum: 1, default: 1}
+    PerPage:
+      name: per_page
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 30}
+  headers:
+    Location:
+      description: Relative URL of the created issue.
+      schema: {type: string, example: /issues/42}
+    Link:
+      description: GitHub pagination links forwarded unchanged.
+      schema: {type: string}
+    RetryAfter:
+      description: Seconds before another GitHub request should be attempted.
+      schema: {type: integer, minimum: 1, example: 60}
+    RequestId:
+      description: Caller-provided or generated request identifier.
+      schema: {type: string, example: 6508c146-8abc-4e30-b743-4ecca4e35f55}
+  schemas:
+    CreateIssue:
+      type: object
+      required: [title]
+      additionalProperties: false
+      properties:
+        title: {type: string, minLength: 1, maxLength: 256}
+        body: {type: [string, "null"]}
+        labels:
+          type: array
+          items: {type: string}
+          default: []
+    UpdateIssue:
+      type: object
+      additionalProperties: false
+      properties:
+        title: {type: string, minLength: 1, maxLength: 256}
+        body: {type: [string, "null"]}
+        state: {type: string, enum: [open, closed]}
+    Issue:
+      type: object
+      required: [number, html_url, state, title, body, labels, created_at, updated_at]
+      properties:
+        number: {type: integer}
+        html_url: {type: string, format: uri}
+        state: {type: string, enum: [open, closed]}
+        title: {type: string}
+        body: {type: [string, "null"]}
+        labels:
+          type: array
+          items:
+            type: object
+            required: [name]
+            properties:
+              name: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    CreateComment:
+      type: object
+      required: [body]
+      additionalProperties: false
+      properties:
+        body: {type: string, minLength: 1}
+    Comment:
+      type: object
+      required: [id, body, user, created_at, html_url]
+      properties:
+        id: {type: integer}
+        body: {type: string}
+        user:
+          type: object
+          required: [login]
+          properties:
+            login: {type: string}
+        created_at: {type: string, format: date-time}
+        html_url: {type: string, format: uri}
+    Event:
+      type: object
+      required: [id, event, action, timestamp]
+      properties:
+        id: {type: string}
+        event: {type: string, enum: [issues, issue_comment, ping]}
+        action: {type: string}
+        issue_number: {type: [integer, "null"]}
+        timestamp: {type: string, format: date-time}
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code: {type: string}
+            message: {type: string}
+            details: {}
+      example:
+        error:
+          code: INVALID_REQUEST
+          message: Request validation failed
+          details: {}
+  examples:
+    Issue:
+      value:
+        number: 42
+        html_url: https://github.com/example/repository/issues/42
+        state: open
+        title: Example issue
+        body: Created through the gateway
+        labels: [{name: bug}]
+        created_at: "2026-09-13T12:00:00Z"
+        updated_at: "2026-09-13T12:00:00Z"
+    Comment:
+      value:
+        id: 100
+        body: Example comment
+        user: {login: octocat}
+        created_at: "2026-09-13T12:00:00Z"
+        html_url: https://github.com/example/repository/issues/42#issuecomment-100
+    IssueList:
+      value:
+        - number: 42
+          html_url: https://github.com/example/repository/issues/42
+          state: open
+          title: Example issue
+          body: Created through the gateway
+          labels: [{name: bug}]
+          created_at: "2026-09-13T12:00:00Z"
+          updated_at: "2026-09-13T12:00:00Z"
+    CommentList:
+      value:
+        - id: 100
+          body: Example comment
+          user: {login: octocat}
+          created_at: "2026-09-13T12:00:00Z"
+          html_url: https://github.com/example/repository/issues/42#issuecomment-100
+  responses:
+    BadRequest:
+      description: Invalid request.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/RequestId"}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example: {error: {code: INVALID_REQUEST, message: Request validation failed, details: {}}}
+    Unauthorized:
+      description: GitHub authentication or webhook signature failed.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/RequestId"}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example: {error: {code: GITHUB_UNAUTHORIZED, message: Authentication failed, details: {}}}
+    Forbidden:
+      description: Configured GitHub credential lacks permission.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/RequestId"}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example: {error: {code: GITHUB_FORBIDDEN, message: Access forbidden, details: {}}}
+    NotFound:
+      description: GitHub issue was not found.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/RequestId"}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example: {error: {code: ISSUE_NOT_FOUND, message: Issue was not found, details: {}}}
+    RateLimited:
+      description: GitHub rate limit exhausted.
+      headers:
+        Retry-After: {$ref: "#/components/headers/RetryAfter"}
+        X-Request-ID: {$ref: "#/components/headers/RequestId"}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example: {error: {code: RATE_LIMITED, message: API rate limit exceeded, details: {}}}
+    ServiceUnavailable:
+      description: GitHub is temporarily unavailable.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/RequestId"}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+          example: {error: {code: GITHUB_UNAVAILABLE, message: GitHub request failed, details: {}}}
